@@ -6,23 +6,23 @@ site_solr_version: "8.6.4"
 
 site_solr_servers:
   - name: "solr_cluster_1"
-    master: "qand-vm01.solr.pdx.smarshqa.com"
-    master_id: "11" #Is there a way I can find these ids programmatically? 
-    primary_slave: "qand-vm03.solr.pdx.smarshqa.com"
-    primary_slave_id: "25"
-    secondary_slave: "qa-solr-01.smarshqa.com"
-    secondary_slave_id: "27"
-    collection: "Where can I get this?"
-    index: "Where can I get this?"
+    master: ""
+    master_id: "" #Is there a way I can find these ids programmatically? 
+    primary_slave: ""
+    primary_slave_id: ""
+    secondary_slave: ""
+    secondary_slave_id: ""
+    collection: ""
+    index: ""
     solr_ver: "{{ site_solr_version }}"
     
-site_node_scratch_table: "scratch.dbo.solrnodebackup02202020" #Does this change?
-site_instance_scratch_table: "scratch.dbo.solrinstancebackup02192020" #Does this change?
-site_solr_db: "qa-comp-db" #Do we have more than one db?
-site_solr_jobs_box: "qald-vm01.solr.pdx.smarshqa.com" #Do we have more than one jobs box?
-site_zoo_keeper: "qa-zookeeper-01.smarshqa.com" #Are there more than one of these?
+site_node_scratch_table: "" #Does this change?
+site_instance_scratch_table: "" #Does this change?
+site_solr_db: "" #Do we have more than one db?
+site_solr_jobs_box: "" #Do we have more than one jobs box?
+site_zoo_keeper: "" #Are there more than one of these?
 site_solr_web_services:
-  - "qa-solrweb-03.smarshqa.com" #Are there more of these web nodes?
-  - "qa-solrweb-04.smarshqa.com"
+  - "" #Are there more of these web nodes?
+  - ""
 
 ...
