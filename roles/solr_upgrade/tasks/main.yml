@@ -1,0 +1,50 @@
+---
+
+#Tasks file for solr_upgrade
+#Ref: https://lucene.apache.org/solr/guide/8_6/upgrading-a-solr-cluster.html
+#Ref: https://lucene.apache.org/solr/guide/8_6/taking-solr-to-production.html#taking-solr-to-production
+
+- name: "Back up Solr instance to {{ site_node_scratch_table }} and {{ site_instance_scratch_table }}"
+  import_role: solr_backup
+  vars:
+    node_scratch_table: "{{ site_node_scratch_table }}"
+    instance_scratch_table: "{{ site_instance_scratch_table }}"
+    master_server: "{{ solr_master_server }}"
+    primary_slave_server: "{{ solr_primary_slave_server }}"
+    secondary_slave_server: "{{ solr_secondary_slave_server }}"
+    master_instance_id: "{{ solr_master_instance_id }}"
+    primary_slave_instance_id: "{{ solr_primary_slave_instance_id }}"
+    secondary_slave_instance_id: "{{ solr_secondary_slave_instance_id }}"
+    
+- name: "Upgrade secondary slave instance"
+  import_tasks: solr_upgrade.yml
+  vars:
+    host_collection: "{{ collection_name }}"
+    host_node: "{{ solr_secondary_slave_server }}"
+    solr_index: "{{ solr_index }}"
+    solr_ver: "{{ solr_ver }}"
+  delegate_to: "{{ solr_secondary_slave_server }}"
+
+- name: "Fail over master and primary to secondary instance"
+  import_role: solr_failover
+  vars:
+    master_server: "{{ solr_master_server }}"
+    primary_slave_server: "{{ solr_primary_slave_server }}"
+    secondary_slave_server: "{{ solr_secondary_slave_server }}"
+    
+- name: "Upgrade master and primary slave instances"
+  import_tasks: solr_upgrade.yml
+  vars:
+    host_collection: "{{ collection_name }}"
+    host_node: "{{ upgrade_node }}"
+    solr_index: "{{ solr_index }}"
+    solr_ver: "{{ solr_ver }}"
+  delegate_to: "{{ upgrade_node }}"
+  loop:
+    - "{{ solr_master_server }}"
+    - "{{ solr_primary_slave_server }}"
+    
+- name: "Fail back master and primary slave instances"
+  import_role: solr_failback
+
+...

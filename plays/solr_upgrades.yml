@@ -1,0 +1,26 @@
+---
+#Play for Solr nodes
+
+- hosts: all
+  connection: local
+  become: true
+  
+  tasks:
+    - name: Update Solr nodes
+      include_role: solr_upgrade
+      vars:
+        solr_master_server: "{{ cluster.master }}"
+        solr_master_instance_id: "{{ cluster.master_id }}"
+        solr_primary_slave_server: "{{ cluster.primary_slave }}"
+        solr_primary_slave_instance_id: "{{ cluster.primary_slave_id }}"
+        solr_secondary_slave_server: "{{ cluster.secondary_slave }}"
+        solr_secondary_slave_instance_id: "{{ cluster.secondary_slave_id }}"
+        collection_name: "{{ cluster.collection }}"
+        solr_index: "{{ cluster.index }}"
+        solr_ver: "{{ cluster.solr_ver }}"
+      loop: "{{ site_solr_servers }}"
+      loop_control:
+        loop_var: cluster
+        label: "Updating {{ cluster.name }}"
+
+...

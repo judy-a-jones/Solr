@@ -1,0 +1,21 @@
+##TODO - turn these two into a loop
+BEGIN TRAN
+UPDATE Solr.SolrConfiguration.Server
+SET Name = '{{ secondary_slave_server }}'
+WHERE EnvironmentId = 7 AND Name = '{{ master_server }}'
+
+UPDATE Solr.SolrConfiguration.Server
+SET Name = '{{ secondary_slave_server }}'
+WHERE EnvironmentId = 7 AND Name = '{{ primary_slave_server }}'
+##
+
+##TODO - turn these too into a loop
+UPDATE Solr.SolrConfiguration.SolrInstance
+SET Url = 'http://{{ secondary_slave_server }}:8080/solr/' #Is this port always the same?
+WHERE EnvironmentId = 7 AND Url = 'http://{{ master_server }}:8080/solr/' #Shouldn't 'solr' be the name of the solr node?
+
+UPDATE Solr.SolrConfiguration.SolrInstance
+SET Url = 'http://{{ secondary_slave_server }}:8080/solr/'
+WHERE EnvironmentId = 7 AND Url = 'http://{{ primary_slave_server }}:8080/solr/'
+COMMIT TRAN
+##

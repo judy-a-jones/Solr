@@ -1,0 +1,27 @@
+##TODO - turn these three into a loop
+#Master Server Backup
+SELECT * INTO {{ node_scratch_table }}
+FROM Solr.SolrConfiguration.Server s
+WHERE (s.Name = '{{ master_server }}'
+OR s.MasterServerId = {{ master_instance_id }}) AND s.EnvironmentId = 7
+AND s.ServerStatusId = 1
+
+#Primary Slave Server Backup
+SELECT * INTO {{ node_scratch_table }}
+FROM Solr.SolrConfiguration.Server s
+WHERE (s.Name = '{{ primary_slave_server }}'
+OR s.MasterServerId = {{ primary_slave_instance_id }}) AND s.EnvironmentId = 7
+AND s.ServerStatusId = 1
+
+#Secondary Slave Server Backup
+SELECT * INTO {{ node_scratch_table }}
+FROM Solr.SolrConfiguration.Server s
+WHERE (s.Name = '{{ secondary_slave_server }}'
+OR s.MasterServerId = {{ secondary_slave_instance_id }}) AND s.EnvironmentId = 7
+AND s.ServerStatusId = 1
+##
+
+#Back up all instances
+SELECT * INTO {{ instance_scratch_table }}
+FROM Solr.SolrConfiguration.SolrInstance si
+WHERE si.ServerId IN ({{ master_instance_id }},{{ primary_slave_instance_id }},{{ secondary_slave_intance_id }})

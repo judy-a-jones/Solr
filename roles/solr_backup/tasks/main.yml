@@ -1,0 +1,33 @@
+---
+
+#Tasks file to perform backups for solr_failover
+#Ref: https://smarsh.atlassian.net/wiki/spaces/SRE/pages/616824921/Solr+-+Quincy+Failover#Quincy-as-Master-for-indexing-and-Primary-slave-for-querying
+
+- name: "Ensure sqlite install"
+  yum:
+    name: "sqlite"
+    state: present
+
+- name: "Create Solr backup script"
+  template:
+    src: solr_backup.j2
+    dest: "/tmp/solr_backup"
+  vars:
+    node_scratch_table: "{{ node_scratch_table }}"
+    instance_scratch_table: "{{ instance_scratch_table }}"
+    master_server: "{{ master_server }}"
+    primary_slave_server: "{{ primary_slave_server }}"
+    secondary_slave_server: "{{ secondary_slave_server }}"
+    master_instance_id: "{{ master_instance_id }}"
+    primary_slave_instance_id: "{{ primary_slave_instance_id }}"
+    secondary_slave_instance_id: "{{ secondary_slave_instance_id }}"
+      
+- name: "Run Solr backup script"
+  command: "sqlite3 {{ site_solr_db }} /tmp/solr_backup"
+    
+- name: "Remove Solr backup script"
+  file:
+    path: "/tmp/solr_backup"
+    state: absent
+    
+...

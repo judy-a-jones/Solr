@@ -1,0 +1,14 @@
+---
+
+#Tasks file for solr_index
+#Ref: https://lucene.apache.org/solr/guide/8_6/reindexing.html
+
+- name: "Start reindexing {{ collection }} on {{ solr_host }}:{{ port }}"
+  uri:
+    url: "http://{{ solr_host }}:{{ 8080 }}/{{ solr_host }}/{{ collection }}/update"
+    method: POST
+    headers:
+      Content-type: "application/json"
+      data-binary: "{"delete":{"query":"*:*" }}" #Test to see if that actually works as expected
+
+...

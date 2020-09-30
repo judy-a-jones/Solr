@@ -1,0 +1,90 @@
+---
+
+#Tasks file for solr_upgrade
+#Ref: https://lucene.apache.org/solr/guide/8_6/upgrading-a-solr-cluster.html
+#Ref: https://lucene.apache.org/solr/guide/8_6/taking-solr-to-production.html#taking-solr-to-production
+
+- name: "Run health check"
+  command: "/bin/solr healthcheck -c {{ host_collection }} -z http://:{{ host_node }}:8080" 
+
+- name: "Download and Extract Upgade Package"
+  unarchive:
+    url: "https://downloads.apache.org/lucene/solr/{{ solr_ver }}/solr-{{ solr_ver }}.tgz"
+    dest: "/tmp/"
+    remote_src: yes
+    extra_opts: 
+      - "solr-{{ solr_ver }}/bin/install_solr_service.sh"
+      - "--strip-components=2"
+
+- name: "Stop Solr on {{ host_node }}"
+  service:
+    name: "{{ host_node }}"
+    status: stopped
+    
+- name: "Start Solr Upgrade on {{ host_node }}"
+  command: "/tmp/solr-{{ solr_ver }}/bin/install_solr_service.sh -s {{ host_node }} -p 8080 -n"
+  
+- name: "Set Solr Environmental Variables"
+  lineinfile:
+    path: "/etc/default/{{ host_node }}.in.sh"
+    line: "{{ line }}"
+    create: yes
+  loop:
+    - "ZK_HOST={{ site_zoo_keeper }}" #Does there need to be several of these?
+    - "SOLR_HOST={{ host_node }}"
+    - "SOLR_PORT=8080"
+    - "SOLR_PID_DIR=/var/{{ host_node }}"
+    - "SOLR_HOME=/var/{{ host_node }}/data"
+    - "LOG4J_PROPS=/var/{{ host_node }}/log4j2.xml"
+    - "SOLR_LOGS_DIR=/var/{{ host_node }}/logs"
+  loop_control:
+    loop_var: line
+    label: "Setting {{ line }} in /etc/default/{{ host_node }}.in.sh"
+    
+- name: "Validate init.d Script"
+  lineinfile:
+    path: "/etc/init.d/{{ host_node }}"
+    line: "{{ line }}"
+    create: yes
+  loop:
+    - "SOLR_INSTALL_DIR=/opt/{{ host_node }}"
+    - "SOLR_ENV=/etc/default/{{ host_node }}.in.sh"
+    - "RUNAS=solr"
+    
+- name: "Start Upgraded Solr on {{ host_node }}"
+  service:
+    name: "{{ host_node }}"
+    state: reloaded
+    enabled: yes
+    
+- name: "Get Solr Upgrade Facts"
+  service_facts:
+  
+- name: "Validate Solr Upgrade"
+  fail:
+  when:
+   - host_node == service.name
+   - '"success" not in service.status'
+  loop: "{{ ansible_facts.services }}"
+  loop_control:
+    loop_var: service
+    label: "Checking {{ service }}"
+
+- name: "Reindex Collection on Host"
+  import_role: "solr_reindex"
+  vars:
+    solr_host: "{{ host_node }}"
+    port: "8080"
+    collection: "{{ host_collection }}"
+    
+- name: "Upgrade Index on Host"
+  import_role: "solr_index_upgrade"
+  vars:
+    lucene_path: "/opt/{{ host_node }}"
+    index_path: "{{ solr_index }}"
+    solr_ver: "{{ solr_ver }}"
+
+- name: "Run Healthcheck"
+  command: "/opt/solr/bin/ healthcheck -c {{ host_collection }} -z {{ site_zoo_keeper }}"
+
+...

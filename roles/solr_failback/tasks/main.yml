@@ -1,0 +1,30 @@
+---
+
+#Tasks file for solr_failback
+#Ref: https://smarsh.atlassian.net/wiki/spaces/SRE/pages/616824921/Solr+-+Quincy+Failover#Reverting-back
+
+- name: "Update zookeeper"
+  command: "{{ solr_script }}"
+  become: yes
+  delegate_to: "{{ site_solr_jobs_box }}"
+  loop:
+    - "/opt/solrmonitor/bin/prune.sh"
+    - "/opt/solrmonitor/bin/populate.sh"
+  loop_control:
+    loop_var: solr_script
+    label: "Running {{ solr_script }} on {{ site_solr_jobs_box }}"
+    
+- name: "Reload solr web service to update routing"
+  uri:
+    url: "{{ solr_web_service }}/SolrWebService.svc/p3yhExGHPwtQ7Qi5pi4P/Configuration/Reload"
+    method: POST
+    headers:
+      Content-type: text/plain
+  loop: "{{ site_solr_web_services }}"
+  
+- name: "Restart Solrloaders" #Does this need to be delegated to something?
+  service:
+    name: solrloader
+    state: restarted
+
+...

@@ -1,0 +1,60 @@
+---
+
+#Tasks file for solr_failover
+#Ref: https://smarsh.atlassian.net/wiki/spaces/SRE/pages/616824921/Solr+-+Quincy+Failover#Quincy-as-Master-for-indexing-and-Primary-slave-for-querying
+
+- name: "Ensure sqlite install"
+  yum:
+    name: "sqlite"
+    state: present
+    
+- name: "Run health check"
+  command: "/bin/solr healthcheck -c {{ solar_collection }} -z http://:{{ solr_node }}:8080" 
+  loop:
+    - "{{ solr_master_server }}"
+    - "{{ solr_primary_slave_server }}"
+    - "{{ solr_secondary_slave_server }}"
+  loop_control:
+    loop_var: solr_name
+    label: "Checking Solr on {{ solr_name }}"
+
+- name: "Create Solr failover script"
+  template:
+    src: solr_failover.j2
+    dest: "/tmp/solr_failover"
+  vars:
+    master_server: "{{ solr_master_server }}"
+    primary_slave_server: "{{ solr_primary_slave_server }}"
+    secondary_slave_server: "{{ solr_secondary_slave_server }}"
+
+- name: "Run Solr failover script"
+  command: "sqlite3 {{ site_solr_db }} /tmp/solr_backup"
+    
+- name: "Remove Solr failover script"
+  file:
+    path: "/tmp/solr_backup"
+    state: absent
+
+- name: "Sync up zookeeper to DB"
+  command: "{{ solr_script }}"
+  become: yes
+  delegate_to: "{{ site_solr_jobs_box }}"
+  loop:
+    - "/opt/solrmonitor/bin/prune.sh"
+    - "/opt/solrmonitor/bin/populate.sh"
+  loop_control:
+    loop_var: solr_script
+    label: "Running {{ solr_script }} on {{ site_solr_jobs_box }}"
+  
+- name: "Reload solr web service to update routing"
+  uri:
+    url: "http://{{ solr_web_service }}/SolrWebService.svc/p3yhExGHPwtQ7Qi5pi4P/Configuration/Reload" #Where does that funky hash come from?
+    method: POST
+    headers:
+      Content-type: text/plain
+  loop: "{{ site_solr_web_services }}"
+  loop_control:
+    loop_var: solr_web_service
+    label: "Reloading {{ solr_web_service }}"
+
+...

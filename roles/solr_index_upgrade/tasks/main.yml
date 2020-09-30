@@ -1,0 +1,9 @@
+---
+
+#Tasks file for solr_index_upgrade
+#Ref: https://lucene.apache.org/solr/guide/8_6/indexupgrader-tool.html#indexupgrader-tool
+
+- name: "Upgrade Solr Index"
+  command: "java -cp {{ lucene_path }}/server/solr-webapp/webapp/WEB-INF/lib/lucene-core-{{ solr_ver }}.jar:{{ lucene_path }}/server/solr-webapp/webapp-INF/lib/lucene-backward-codecs-{{ solr_ver }}.jar org.apache.lucene.index.IndexUpgrader {{ index_path }}"
+  
+...
